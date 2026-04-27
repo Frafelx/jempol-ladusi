@@ -122,12 +122,16 @@
                                             $phoneClean = '62' . substr($phoneClean, 1);
                                         }
 
-                                        // Placeholder Template (Nanti di controller/JSON bisa diganti dengan variabel dinamis)
                                         $namaP = $data->nama_pengguna ?? 'Bapak/Ibu';
                                         $namaW = $data->nama_wbp ?? '-';
-                                        $pesanTeks = "Halo *{$namaP}*, kami dari JEMPOL LADUSI Rutan Rembang ingin menindaklanjuti terkait layanan *{$data->jenis_layanan}* untuk WBP atas nama *{$namaW}*.";
                                         
-                                        // Generate URL API WhatsApp
+                                        // Ambil template dari file JSON, berikan default text jika JSON kosong/belum terbuat
+                                        $templateLayanan = $chatTemplates[$data->jenis_layanan] ?? "Halo *{nama_pengguna}*, info terkait layanan {$data->jenis_layanan} untuk WBP *{nama_wbp}*.";
+                                        
+                                        // Replace parameter dengan nama asli
+                                        $pesanTeks = str_replace(['{nama_pengguna}', '{nama_wbp}'], [$namaP, $namaW], $templateLayanan);
+                                        
+                                        // Generate URL WA
                                         $waUrl = "https://wa.me/{$phoneClean}?text=" . urlencode($pesanTeks);
                                     @endphp
                                     <a href="{{ $waUrl }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-500 rounded-lg text-[11px] font-bold transition-all shadow-sm">

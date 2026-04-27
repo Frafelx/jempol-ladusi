@@ -4,11 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage; // Wajib ditambahkan untuk baca JSON
 
 class DataPenggunaController extends Controller
 {
     public function index(Request $request)
     {
+        // 1. Siapkan raw query tanpa klausa ORDER BY terlebih dahulu
         $sql = "
             -- 1. siapintegrasi
             SELECT
@@ -61,8 +63,10 @@ class DataPenggunaController extends Controller
             WHERE dt.deleted_date IS NULL
         ";
 
+        // 2. Bungkus raw query menjadi Subquery
         $query = DB::table(DB::raw("($sql) as combined_data"));
 
+        // 3. Aplikasikan Filter: Search
         if ($request->filled('search')) {
             $search = '%' . $request->search . '%';
             $query->where(function($q) use ($search) {
@@ -72,10 +76,12 @@ class DataPenggunaController extends Controller
             });
         }
 
+        // 4. Aplikasikan Filter: Jenis Layanan
         if ($request->filled('layanan') && $request->layanan !== 'semua') {
             $query->where('jenis_layanan', $request->layanan);
         }
 
+        // 5. Aplikasikan Filter: Rentang Tanggal
         if ($request->filled('start_date')) {
             $query->whereDate('tgl', '>=', $request->start_date);
         }
@@ -83,10 +89,18 @@ class DataPenggunaController extends Controller
             $query->whereDate('tgl', '<=', $request->end_date);
         }
 
+        // 6. Pagination & Sorting
         $dataPengguna = $query->orderBy('tgl', 'desc')
                               ->paginate(20)
                               ->withQueryString();
 
-        return view('data-pengguna', compact('dataPengguna'));
+        // 7. Ambil Template JSON (Jika file belum ada, kembalikan array kosong)
+        $chatTemplates = [];
+        if (Storage::disk('local')->exists('chat_templates.json')) {
+            $chatTemplates = json_decode(Storage::disk('local')->get('chat_templates.json'), true);
+        }
+
+        // 8. Lempar data dan template ke view
+        return view('data-pengguna', compact('dataPengguna', 'chatTemplates'));
     }
 }
