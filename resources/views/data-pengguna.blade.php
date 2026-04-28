@@ -3,9 +3,14 @@
 @section('title', 'Data Pengguna Layanan')
 
 @section('content')
-    <div class="mb-6">
-        <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Rekapitulasi Terpadu</h3>
-        <p class="text-[13px] text-gray-500 mt-1">Data gabungan dari SIAP INTEGRASI, KAGATAU, Kunjungan, dan SIPIRMAN.</p>
+    <div class="mb-6 flex justify-between items-end">
+        <div>
+            <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Rekapitulasi Terpadu</h3>
+            <p class="text-[13px] text-gray-500 mt-1">Data gabungan dari SIAP INTEGRASI, KAGATAU, Kunjungan, dan SIPIRMAN.</p>
+        </div>
+        <button onclick="resetFollowUpMemory()" id="btnResetMemory" class="hidden text-[11px] font-semibold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
+            Reset Status Follow Up
+        </button>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
@@ -49,7 +54,7 @@
 
             <div class="flex gap-2 w-full md:w-auto">
                 <button type="submit" class="flex-1 md:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Filter
                 </button>
                 <a href="{{ route('data-pengguna') }}" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-600 text-[13px] font-semibold rounded-xl transition-all flex items-center justify-center">
@@ -134,9 +139,11 @@
                                         // Generate URL WA
                                         $waUrl = "https://wa.me/{$phoneClean}?text=" . urlencode($pesanTeks);
                                     @endphp
-                                    <a href="{{ $waUrl }}" target="_blank" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-500 rounded-lg text-[11px] font-bold transition-all shadow-sm">
-                                        <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
-                                        Chat WA
+                                    
+                                    <a href="{{ $waUrl }}" target="_blank" onclick="markAsFollowedUp(this, '{{ md5($waUrl) }}')" data-id="{{ md5($waUrl) }}"
+                                       class="btn-follow-up inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-200 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold transition-all shadow-sm">
+                                        <svg class="w-3.5 h-3.5 wa-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
+                                        <span class="btn-text">Chat WA</span>
                                     </a>
                                 @else
                                     <button disabled class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400 border border-gray-200 rounded-lg text-[11px] font-bold cursor-not-allowed">
@@ -176,4 +183,55 @@
             </div>
         @endif
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let hasFollowedUp = false;
+            const buttons = document.querySelectorAll('.btn-follow-up');
+            
+            buttons.forEach(btn => {
+                const id = btn.getAttribute('data-id');
+                // Jika ditemukan memori di browser bahwa tombol ini pernah diklik
+                if (localStorage.getItem('followed_up_' + id)) {
+                    setButtonToEmerald(btn);
+                    hasFollowedUp = true;
+                }
+            });
+
+            // Tampilkan tombol reset memori jika ada minimal 1 yang berstatus terkirim
+            if(hasFollowedUp) {
+                document.getElementById('btnResetMemory').classList.remove('hidden');
+            }
+        });
+
+        // Fungsi yang dipanggil saat tombol diklik
+        function markAsFollowedUp(btn, id) {
+            localStorage.setItem('followed_up_' + id, 'true');
+            setButtonToEmerald(btn);
+            document.getElementById('btnResetMemory').classList.remove('hidden');
+        }
+
+        // Fungsi mengubah kelas CSS dari Abu-abu (Netral) ke Hijau (Selesai)
+        function setButtonToEmerald(btn) {
+            btn.classList.remove('bg-gray-50', 'hover:bg-gray-200', 'text-gray-600', 'border-gray-200');
+            btn.classList.add('bg-emerald-50', 'hover:bg-emerald-500', 'text-emerald-600', 'hover:text-white', 'border-emerald-200', 'hover:border-emerald-500');
+            
+            const textSpan = btn.querySelector('.btn-text');
+            if(textSpan) textSpan.innerText = 'Terkirim';
+        }
+
+        // Fungsi pamungkas untuk menghapus semua memori browser jika nge-bug
+        function resetFollowUpMemory() {
+            if(confirm('Yakin ingin mereset semua status Follow Up di halaman ini kembali menjadi abu-abu?')) {
+                // Loop untuk menghapus semua data localstorage yang berawalan 'followed_up_'
+                Object.keys(localStorage).forEach(function(key) {
+                    if (key.startsWith('followed_up_')) {
+                        localStorage.removeItem(key);
+                    }
+                });
+                // Muat ulang halaman agar bersih
+                window.location.reload();
+            }
+        }
+    </script>
 @endsection
