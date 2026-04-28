@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>JEMPOL LADUSI | Rutan Rembang</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
 </head>
 <body class="bg-[#FAFAFA] text-gray-800 antialiased flex h-screen overflow-hidden selection:bg-indigo-100 selection:text-indigo-900" style="font-family: 'Inter', sans-serif;">
 
@@ -41,7 +41,7 @@
                     </a>
                 </li>
                 <li>
-                    <a href="#" class="flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group {{ request()->routeIs('buku-telepon') ? 'bg-indigo-50/80 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium' }}">
+                    <a href="{{ route('buku-telepon.index') }}" class="flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group {{ request()->routeIs('buku-telepon') ? 'bg-indigo-50/80 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium' }}">
                         <svg class="w-5 h-5 mr-3 transition-colors {{ request()->routeIs('buku-telepon') ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                         <span class="text-[14px]">Buku Telepon</span>
                     </a>
