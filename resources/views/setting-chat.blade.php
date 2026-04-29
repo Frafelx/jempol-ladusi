@@ -5,7 +5,7 @@
 @section('content')
     <div class="mb-6">
         <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Format Pesan Follow Up</h3>
-        <p class="text-[13px] text-gray-500 mt-1">Atur template pesan WhatsApp otomatis berdasarkan layanan.</p>
+        <p class="text-[13px] text-gray-500 mt-1">Atur template pesan WhatsApp otomatis untuk semua layanan.</p>
     </div>
 
     @if(session('success'))
@@ -23,7 +23,7 @@
                 </div>
                 <div>
                     <h4 class="text-[14px] font-bold text-gray-800">Petunjuk Penggunaan Parameter</h4>
-                    <p class="text-[13px] text-gray-600 mt-1 leading-relaxed">Gunakan parameter <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{nama_pengguna}</code> untuk memanggil nama pengunjung/penjamin secara otomatis, dan <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{nama_wbp}</code> untuk memanggil nama WBP. Gunakan tanda bintang (*) untuk membuat teks tebal di WA.</p>
+                    <p class="text-[13px] text-gray-600 mt-1 leading-relaxed">Gunakan parameter <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{nama_pengguna}</code> untuk memanggil nama pengunjung/penjamin, <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{nama_wbp}</code> untuk nama WBP, dan <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-bold">{layanan}</code> untuk menampilkan jenis layanannya. Gunakan tanda bintang (*) untuk membuat teks tebal.</p>
                 </div>
             </div>
         </div>
@@ -31,12 +31,10 @@
         <form action="{{ route('setting-chat.update') }}" method="POST" class="p-6">
             @csrf
             <div class="space-y-6">
-                @foreach($templates as $layanan => $pesan)
-                    <div>
-                        <label class="block text-[13px] font-bold text-gray-800 mb-2">Template {{ $layanan }}</label>
-                        <textarea name="{{ $layanan }}" rows="3" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all text-gray-700 leading-relaxed resize-none">{{ $pesan }}</textarea>
-                    </div>
-                @endforeach
+                <div>
+                    <label class="block text-[13px] font-bold text-gray-800 mb-2">Template Chat Follow Up</label>
+                    <textarea name="template_umum" rows="4" class="w-full px-4 py-3 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all text-gray-700 leading-relaxed resize-none">{{ $templates['template_umum'] ?? 'Halo *{nama_pengguna}*, kami dari JEMPOL LADUSI Rutan Rembang ingin mengabarkan informasi terkait layanan *{layanan}* untuk WBP atas nama *{nama_wbp}*.' }}</textarea>
+                </div>
             </div>
 
             <div class="mt-8 flex justify-end">

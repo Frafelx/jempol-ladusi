@@ -5,6 +5,7 @@ use App\Http\Controllers\DataPenggunaController;
 use App\Http\Controllers\SettingChatController;
 use App\Http\Controllers\KanalPengaduanController;
 use App\Http\Controllers\BukuTeleponController; // Gabungkan semua use di sini
+use App\Http\Controllers\NotificationController;
 
 Route::get('/', function () {
     return view('dashboard');
@@ -24,3 +25,6 @@ Route::delete('/kanal-pengaduan/{id}', [KanalPengaduanController::class, 'destro
 // Bagian Buku Telepon
 Route::get('/buku-telepon', [BukuTeleponController::class, 'index'])->name('buku-telepon.index');
 Route::delete('/buku-telepon/{id}', [BukuTeleponController::class, 'destroy'])->name('buku-telepon.destroy');
+
+
+Route::get('/api/notifications', [NotificationController::class, 'getLatest'])->name('api.notifications');

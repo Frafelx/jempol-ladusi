@@ -4,7 +4,7 @@
 
 @section('content')
     <div class="mb-6">
-        <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Manajemen Akun Layanan</h3>
+        <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Manajemen Akun Layanan Pengaduan</h3>
         <p class="text-[13px] text-gray-500 mt-1">Catatan informasi kredensial (username & password) beserta akses cepat ke berbagai kanal layanan Rutan.</p>
     </div>
 

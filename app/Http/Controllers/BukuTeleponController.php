@@ -10,11 +10,11 @@ class BukuTeleponController extends Controller
     public function index(Request $request)
     {
         $search = $request->query('search');
-        $dbSipirman = "sipirman"; // Sesuaikan dengan nama DB Sipirman Anda
+        $dbSipirman = "sipirman"; // Prefix untuk menunjuk ke database sipirman
 
-        // 1. Ambil data Tahanan dari DB Sipirman (mysql)
+        // 1. Ambil data Tahanan dari DB Sipirman (Ditambahkan prefix $dbSipirman)
         $tahanans = DB::connection('mysql')
-            ->table('tahanan')
+            ->table($dbSipirman . '.tahanan') // <--- PERBAIKAN DI SINI
             ->when($search, function($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('code_napi', 'like', "%{$search}%");
@@ -26,7 +26,7 @@ class BukuTeleponController extends Controller
             // SOURCE A: Dari Layanan KAGATAU (Database: kagatau)
             $dariLayanan = DB::connection('mysql_layanan')
                 ->table('data_layanan')
-                ->leftJoin($dbSipirman . '.penitip', 'data_layanan.penitip_id', '=', 'penitip.id')
+                ->leftJoin($dbSipirman . '.penitip', 'data_layanan.penitip_id', '=', 'penitip.id') // Ini sudah benar
                 ->where('data_layanan.tahanan_id', $t->id)
                 ->select(
                     'data_layanan.id as id_aksi', // ID untuk delete
@@ -39,7 +39,7 @@ class BukuTeleponController extends Controller
 
             // SOURCE B: Dari Master Penitip Sipirman
             $dariPenitip = DB::connection('mysql')
-                ->table('penitip')
+                ->table($dbSipirman . '.penitip') // <--- PERBAIKAN DI SINI
                 ->where('kode_tahanan', $t->code_napi)
                 ->select(
                     DB::raw("NULL as id_aksi"),
@@ -52,8 +52,8 @@ class BukuTeleponController extends Controller
 
             // SOURCE C: Dari Data Titipan Barang Sipirman
             $dariTitipan = DB::connection('mysql')
-                ->table('data_titipan')
-                ->leftJoin('penitip', 'data_titipan.nik', '=', 'penitip.nik')
+                ->table($dbSipirman . '.data_titipan') // <--- PERBAIKAN DI SINI
+                ->leftJoin($dbSipirman . '.penitip', 'data_titipan.nik', '=', 'penitip.nik') // <--- PERBAIKAN DI SINI
                 ->where('data_titipan.kode_tahanan', $t->code_napi)
                 ->select(
                     DB::raw("NULL as id_aksi"),
@@ -75,8 +75,6 @@ class BukuTeleponController extends Controller
 
         return view('buku-telepon', compact('tahanans'));
     }
-
-
 
     public function destroy($id)
     {

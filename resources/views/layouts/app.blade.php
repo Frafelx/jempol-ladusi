@@ -8,9 +8,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body class="bg-[#FAFAFA] text-gray-800 antialiased flex h-screen overflow-hidden selection:bg-indigo-100 selection:text-indigo-900" style="font-family: 'Inter', sans-serif;">
+
+    <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3" preload="auto"></audio>
 
     <aside class="w-[260px] bg-white border-r border-gray-100 flex flex-col z-20">
         <div class="h-[80px] flex items-center px-6">
@@ -41,8 +43,8 @@
                     </a>
                 </li>
                 <li>
-                    <a href="{{ route('buku-telepon.index') }}" class="flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group {{ request()->routeIs('buku-telepon') ? 'bg-indigo-50/80 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium' }}">
-                        <svg class="w-5 h-5 mr-3 transition-colors {{ request()->routeIs('buku-telepon') ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
+                    <a href="{{ route('buku-telepon.index') }}" class="flex items-center px-3 py-2.5 rounded-xl transition-all duration-200 group {{ request()->routeIs('buku-telepon.index') ? 'bg-indigo-50/80 text-indigo-700 font-semibold' : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium' }}">
+                        <svg class="w-5 h-5 mr-3 transition-colors {{ request()->routeIs('buku-telepon.index') ? 'text-indigo-600' : 'text-gray-400 group-hover:text-indigo-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
                         <span class="text-[14px]">Buku Telepon</span>
                     </a>
                 </li>
@@ -62,7 +64,7 @@
         </nav>
     </aside>
 
-    <div class="flex-1 flex flex-col h-screen relative">
+    <div class="flex-1 flex flex-col h-screen relative w-full overflow-hidden">
         
         <header class="h-[80px] bg-white/80 backdrop-blur-md border-b border-gray-100 flex items-center px-8 justify-between z-10 sticky top-0">
             
@@ -70,11 +72,25 @@
                 <h2 class="text-xl font-bold text-gray-800 tracking-tight whitespace-nowrap">@yield('title', 'Dashboard')</h2>
             </div>
             
-            <div class="flex items-center gap-3">
-                <button class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors relative mr-1">
+            <div class="flex items-center gap-3 relative">
+                <button id="notifButton" class="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors relative mr-1" onclick="toggleNotifPopup()">
                     <svg class="w-[22px] h-[22px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
-                    <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                    <span id="notifBadge" class="hidden absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
                 </button>
+
+                <div id="notifPopup" class="hidden absolute top-12 right-40 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 transform origin-top-right transition-all">
+                    <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
+                        <h4 class="text-[13px] font-bold text-gray-800">Notifikasi Hari Ini</h4>
+                        <span id="notifCountText" class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">0 Baru</span>
+                    </div>
+                    <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-50 p-2">
+                        </div>
+                    <div class="p-2 border-t border-gray-100">
+                        <a href="{{ route('data-pengguna') }}" class="block w-full text-center py-2 text-[12px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
+                            Lihat Semua Data Layanan
+                        </a>
+                    </div>
+                </div>
 
                 <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
 
@@ -97,12 +113,96 @@
             </div>
         </header>
 
-        <main class="flex-1 overflow-y-auto p-8">
+        <main class="flex-1 overflow-y-auto p-8 relative">
             <div class="max-w-[1200px] mx-auto">
                 @yield('content')
             </div>
         </main>
     </div>
 
+    <script>
+        let currentLatestNotifKey = "";
+
+        function toggleNotifPopup() {
+            const popup = document.getElementById('notifPopup');
+            popup.classList.toggle('hidden');
+            
+            document.getElementById('notifBadge').classList.add('hidden');
+            
+            if (currentLatestNotifKey !== "") {
+                localStorage.setItem('last_read_notif', currentLatestNotifKey);
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            const popup = document.getElementById('notifPopup');
+            const button = document.getElementById('notifButton');
+            if (!button.contains(event.target) && !popup.contains(event.target)) {
+                popup.classList.add('hidden');
+            }
+        });
+
+        function fetchLatestNotifications() {
+            fetch('/api/notifications')
+                .then(response => response.json())
+                .then(data => {
+                    const listContainer = document.getElementById('notifList');
+                    const badge = document.getElementById('notifBadge');
+                    const countText = document.getElementById('notifCountText');
+
+                    if (data.count > 0) {
+                        currentLatestNotifKey = data.data[0].tgl + '_' + data.data[0].nama_pengguna;
+                        const lastReadNotif = localStorage.getItem('last_read_notif');
+
+                        // JIKA ada notifikasi baru DAN pop-up sedang tertutup
+                        if (currentLatestNotifKey !== lastReadNotif && document.getElementById('notifPopup').classList.contains('hidden')) {
+                            // Tampilkan Titik Merah
+                            badge.classList.remove('hidden');
+
+                            // Mainkan Suara Notifikasi "Software Interface Start"
+                            const sound = document.getElementById('notifSound');
+                            sound.currentTime = 0; // Reset ke detik 0
+                            
+                            // Browser modern membutuhkan interaksi dari user (klik sembarang tempat) sebelum bisa memutar suara otomatis. 
+                            sound.play().catch(e => console.log('Menunggu interaksi user sebelum memutar suara.'));
+                        }
+
+                        countText.innerText = data.count + ' Baru Hari Ini';
+                        
+                        listContainer.innerHTML = '';
+                        data.data.forEach(item => {
+                            let urlRedirect = `{{ route('data-pengguna') }}?layanan=${encodeURIComponent(item.jenis_layanan)}`;
+                            
+                            let iconColor = 'text-blue-500 bg-blue-50';
+                            if(item.jenis_layanan === 'SIAP INTEGRASI') iconColor = 'text-emerald-500 bg-emerald-50';
+                            if(item.jenis_layanan === 'KUNJUNGAN') iconColor = 'text-purple-500 bg-purple-50';
+                            if(item.jenis_layanan === 'SIPIRMAN') iconColor = 'text-amber-500 bg-amber-50';
+
+                            listContainer.innerHTML += `
+                                <a href="${urlRedirect}" class="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                                    <div class="mt-1 p-1.5 rounded-full ${iconColor}">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    </div>
+                                    <div>
+                                        <p class="text-[12.5px] font-semibold text-gray-800 leading-tight">Input Baru: ${item.jenis_layanan}</p>
+                                        <p class="text-[11.5px] text-gray-500 mt-0.5 truncate w-48">Atas nama: ${item.nama_pengguna || 'Tidak diketahui'}</p>
+                                    </div>
+                                </a>
+                            `;
+                        });
+                    } else {
+                        badge.classList.add('hidden');
+                        countText.innerText = '0 Baru';
+                        listContainer.innerHTML = '<div class="p-4 text-center text-[12px] text-gray-400">Belum ada notifikasi layanan baru hari ini.</div>';
+                    }
+                })
+                .catch(error => console.error('Gagal mengambil notifikasi:', error));
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            fetchLatestNotifications();
+            setInterval(fetchLatestNotifications, 15000);
+        });
+    </script>
 </body>
 </html>

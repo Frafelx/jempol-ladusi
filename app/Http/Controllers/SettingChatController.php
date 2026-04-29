@@ -28,13 +28,10 @@ class SettingChatController extends Controller
 
     private function getTemplates()
     {
-        // Jika file JSON belum ada, buat format defaultnya
+        // Jika file JSON belum ada, buat 1 format universal
         if (!Storage::disk('local')->exists($this->filePath)) {
             $default = [
-                'SIAP INTEGRASI' => "Halo *{nama_pengguna}*, kami dari JEMPOL LADUSI Rutan Rembang ingin menindaklanjuti layanan *SIAP INTEGRASI* untuk WBP atas nama *{nama_wbp}*.",
-                'KAGATAU' => "Halo *{nama_pengguna}*, kami dari JEMPOL LADUSI Rutan Rembang ingin mengabarkan informasi layanan *KAGATAU* untuk WBP atas nama *{nama_wbp}*.",
-                'KUNJUNGAN' => "Halo *{nama_pengguna}*, terima kasih telah melakukan layanan *KUNJUNGAN* kepada WBP atas nama *{nama_wbp}*.",
-                'SIPIRMAN' => "Halo *{nama_pengguna}*, informasi terkait penitipan barang layanan *SIPIRMAN* untuk WBP atas nama *{nama_wbp}*."
+                'template_umum' => "Halo *{nama_pengguna}*, kami dari JEMPOL LADUSI Rutan Rembang ingin mengabarkan informasi terkait layanan *{layanan}* untuk WBP atas nama *{nama_wbp}*."
             ];
             Storage::disk('local')->put($this->filePath, json_encode($default, JSON_PRETTY_PRINT));
             return $default;
