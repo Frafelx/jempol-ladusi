@@ -6,6 +6,7 @@ use App\Http\Controllers\SettingChatController;
 use App\Http\Controllers\KanalPengaduanController;
 use App\Http\Controllers\BukuTeleponController; // Gabungkan semua use di sini
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('dashboard');

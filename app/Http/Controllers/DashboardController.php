@@ -4,15 +4,13 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage; // Wajib ditambahkan untuk baca JSON
 
-class DataPenggunaController extends Controller
+class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Siapkan raw query tanpa klausa ORDER BY terlebih dahulu
+        // Query UNION sama persis dengan DataPenggunaController
         $sql = "
-            -- 1. siapintegrasi
             SELECT
               tanggal_daftar              AS tgl,
               'SIAP INTEGRASI'            AS jenis_layanan,
@@ -24,7 +22,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 2. kagatau
             SELECT
               dl.tanggal_masuk            AS tgl,
               'KAGATAU'                   AS jenis_layanan,
@@ -38,7 +35,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 3. data_pengunjung
             SELECT
               waktu_kunjungan             AS tgl,
               'KUNJUNGAN'                 AS jenis_layanan,
@@ -50,7 +46,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 4. sipirman
             SELECT
               DATE(dt.tanggal)            AS tgl,
               'SIPIRMAN'                  AS jenis_layanan,
@@ -63,25 +58,9 @@ class DataPenggunaController extends Controller
             WHERE dt.deleted_date IS NULL
         ";
 
-        // 2. Bungkus raw query menjadi Subquery
         $query = DB::table(DB::raw("($sql) as combined_data"));
 
-        // 3. Aplikasikan Filter: Search
-        if ($request->filled('search')) {
-            $search = '%' . $request->search . '%';
-            $query->where(function($q) use ($search) {
-                $q->where('nama_pengguna', 'like', $search)
-                  ->orWhere('nama_wbp', 'like', $search)
-                  ->orWhere('no_hp', 'like', $search);
-            });
-        }
-
-        // 4. Aplikasikan Filter: Jenis Layanan
-        if ($request->filled('layanan') && $request->layanan !== 'semua') {
-            $query->where('jenis_layanan', $request->layanan);
-        }
-
-        // 5. Aplikasikan Filter: Rentang Tanggal
+        // Filter tanggal
         if ($request->filled('start_date')) {
             $query->whereDate('tgl', '>=', $request->start_date);
         }
@@ -89,18 +68,42 @@ class DataPenggunaController extends Controller
             $query->whereDate('tgl', '<=', $request->end_date);
         }
 
-        // 6. Pagination & Sorting
-        $dataPengguna = $query->orderBy('tgl', 'desc')
-                              ->paginate(20)
-                              ->withQueryString();
+        // Total semua data
+        $totalPengguna = (clone $query)->count();
 
-        // 7. Ambil Template JSON (Jika file belum ada, kembalikan array kosong)
-        $chatTemplates = [];
-        if (Storage::disk('local')->exists('chat_templates.json')) {
-            $chatTemplates = json_decode(Storage::disk('local')->get('chat_templates.json'), true);
-        }
+        // Total yang punya no HP (bisa di-follow up)
+        $totalBisaFollowUp = (clone $query)
+            ->whereNotNull('no_hp')
+            ->where('no_hp', '!=', '')
+            ->count();
 
-        // 8. Lempar data dan template ke view
-        return view('data-pengguna', compact('dataPengguna', 'chatTemplates'));
+        // Total per layanan
+        $perLayanan = (clone $query)
+            ->select('jenis_layanan', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('jenis_layanan')
+            ->get()
+            ->keyBy('jenis_layanan');
+
+        // Data tren per hari untuk chart
+        $chartData = (clone $query)
+            ->select(DB::raw('DATE(tgl) as tanggal'), DB::raw('COUNT(*) as jumlah'))
+            ->groupBy(DB::raw('DATE(tgl)'))
+            ->orderBy('tanggal')
+            ->get()
+            ->mapWithKeys(fn($r) => [
+                \Carbon\Carbon::parse($r->tanggal)->format('d M') => $r->jumlah
+            ]);
+
+        $startDate = $request->filled('start_date') ? $request->start_date : now()->subDays(29)->toDateString();
+        $endDate   = $request->filled('end_date')   ? $request->end_date   : now()->toDateString();
+
+        return view('dashboard', compact(
+            'totalPengguna',
+            'totalBisaFollowUp',
+            'perLayanan',
+            'chartData',
+            'startDate',
+            'endDate',
+        ));
     }
 }

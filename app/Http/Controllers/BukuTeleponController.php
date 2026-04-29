@@ -12,9 +12,15 @@ class BukuTeleponController extends Controller
         $search = $request->query('search');
         $dbSipirman = "sipirman"; // Prefix untuk menunjuk ke database sipirman
 
+<<<<<<< HEAD
         // 1. Ambil data Tahanan dari DB Sipirman (Ditambahkan prefix $dbSipirman)
         $tahanans = DB::connection('mysql')
             ->table($dbSipirman . '.tahanan') // <--- PERBAIKAN DI SINI
+=======
+        // 1. Ambil data Tahanan dari DB Sipirman (mysql)
+        $tahanans = DB::connection('mysql_sipirman')
+            ->table('tahanan')
+>>>>>>> 6a2f19b9fd595fd8b9b3d21ccde7976f7f242ca0
             ->when($search, function($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
                   ->orWhere('code_napi', 'like', "%{$search}%");
@@ -38,8 +44,13 @@ class BukuTeleponController extends Controller
                 ->get();
 
             // SOURCE B: Dari Master Penitip Sipirman
+<<<<<<< HEAD
             $dariPenitip = DB::connection('mysql')
                 ->table($dbSipirman . '.penitip') // <--- PERBAIKAN DI SINI
+=======
+            $dariPenitip = DB::connection('mysql_sipirman')
+                ->table('penitip')
+>>>>>>> 6a2f19b9fd595fd8b9b3d21ccde7976f7f242ca0
                 ->where('kode_tahanan', $t->code_napi)
                 ->select(
                     DB::raw("NULL as id_aksi"),
@@ -51,9 +62,15 @@ class BukuTeleponController extends Controller
                 ->get();
 
             // SOURCE C: Dari Data Titipan Barang Sipirman
+<<<<<<< HEAD
             $dariTitipan = DB::connection('mysql')
                 ->table($dbSipirman . '.data_titipan') // <--- PERBAIKAN DI SINI
                 ->leftJoin($dbSipirman . '.penitip', 'data_titipan.nik', '=', 'penitip.nik') // <--- PERBAIKAN DI SINI
+=======
+            $dariTitipan = DB::connection('mysql_sipirman')
+                ->table('data_titipan')
+                ->leftJoin('penitip', 'data_titipan.nik', '=', 'penitip.nik')
+>>>>>>> 6a2f19b9fd595fd8b9b3d21ccde7976f7f242ca0
                 ->where('data_titipan.kode_tahanan', $t->code_napi)
                 ->select(
                     DB::raw("NULL as id_aksi"),
