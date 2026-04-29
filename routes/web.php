@@ -4,11 +4,11 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\DataPenggunaController;
 use App\Http\Controllers\SettingChatController;
 use App\Http\Controllers\KanalPengaduanController;
-use App\Http\Controllers\BukuTeleponController; // Gabungkan semua use di sini
+use App\Http\Controllers\BukuTeleponController;
+use App\Http\Controllers\DashboardController;
 
-Route::get('/', function () {
-    return view('dashboard');
-})->name('dashboard');
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+Route::get('/dashboard', [DashboardController::class, 'index']);
 
 Route::get('/data-pengguna', [DataPenggunaController::class, 'index'])->name('data-pengguna');
 

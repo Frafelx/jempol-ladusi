@@ -13,7 +13,7 @@ class BukuTeleponController extends Controller
         $dbSipirman = "sipirman"; // Sesuaikan dengan nama DB Sipirman Anda
 
         // 1. Ambil data Tahanan dari DB Sipirman (mysql)
-        $tahanans = DB::connection('mysql')
+        $tahanans = DB::connection('mysql_sipirman')
             ->table('tahanan')
             ->when($search, function($q) use ($search) {
                 $q->where('nama', 'like', "%{$search}%")
@@ -38,7 +38,7 @@ class BukuTeleponController extends Controller
                 ->get();
 
             // SOURCE B: Dari Master Penitip Sipirman
-            $dariPenitip = DB::connection('mysql')
+            $dariPenitip = DB::connection('mysql_sipirman')
                 ->table('penitip')
                 ->where('kode_tahanan', $t->code_napi)
                 ->select(
@@ -51,7 +51,7 @@ class BukuTeleponController extends Controller
                 ->get();
 
             // SOURCE C: Dari Data Titipan Barang Sipirman
-            $dariTitipan = DB::connection('mysql')
+            $dariTitipan = DB::connection('mysql_sipirman')
                 ->table('data_titipan')
                 ->leftJoin('penitip', 'data_titipan.nik', '=', 'penitip.nik')
                 ->where('data_titipan.kode_tahanan', $t->code_napi)
