@@ -4,15 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage; // Wajib ditambahkan untuk baca JSON
+use Illuminate\Support\Facades\Storage;
 
 class DataPenggunaController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Siapkan raw query tanpa klausa ORDER BY terlebih dahulu
+        // 1. Siapkan raw query
         $sql = "
-            -- 1. siapintegrasi
+            -- 1. siapintegrasi (HANYA JIKA histori_info_sidang_tpp SUDAH TERISI)
             SELECT
               tanggal_daftar              AS tgl,
               'SIAP INTEGRASI'            AS jenis_layanan,
@@ -21,10 +21,11 @@ class DataPenggunaController extends Controller
               no_hp,
               'siapintegrasi'             AS sumber
             FROM siapintegrasi.layanan_integrasi
+            WHERE histori_info_sidang_tpp IS NOT NULL
 
             UNION ALL
 
-            -- 2. kagatau
+            -- 2. kagatau (HANYA JIKA status = 'dilayani')
             SELECT
               dl.tanggal_masuk            AS tgl,
               'KAGATAU'                   AS jenis_layanan,
@@ -35,6 +36,7 @@ class DataPenggunaController extends Controller
             FROM kagatau.data_layanan dl
             LEFT JOIN sipirman.penitip  p ON p.id = dl.penitip_id
             LEFT JOIN sipirman.tahanan  t ON t.id = dl.tahanan_id
+            WHERE dl.status = 'dilayani'
 
             UNION ALL
 
@@ -46,7 +48,7 @@ class DataPenggunaController extends Controller
               wbp                         AS nama_wbp,
               catatan                     AS no_hp,
               'data_pengunjung'           AS sumber
-            FROM data_pengunjung.data_kunjungan
+            FROM data_kunjungan.data_kunjungan
 
             UNION ALL
 

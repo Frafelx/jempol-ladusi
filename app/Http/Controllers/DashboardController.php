@@ -9,7 +9,10 @@ class DashboardController extends Controller
 {
     public function index(Request $request)
     {
-        // Query UNION sama persis dengan DataPenggunaController
+        // Hitung total tahanan dari database sipirman
+        $jumlahTahanan = DB::table('sipirman.tahanan')->count();
+
+        // Query UNION (Disinkronkan 100% dengan DataPenggunaController)
         $sql = "
             SELECT
               tanggal_daftar              AS tgl,
@@ -19,6 +22,7 @@ class DashboardController extends Controller
               no_hp,
               'siapintegrasi'             AS sumber
             FROM siapintegrasi.layanan_integrasi
+            WHERE histori_info_sidang_tpp IS NOT NULL
 
             UNION ALL
 
@@ -32,17 +36,7 @@ class DashboardController extends Controller
             FROM kagatau.data_layanan dl
             LEFT JOIN sipirman.penitip  p ON p.id = dl.penitip_id
             LEFT JOIN sipirman.tahanan  t ON t.id = dl.tahanan_id
-
-            UNION ALL
-
-            SELECT
-              waktu_kunjungan             AS tgl,
-              'KUNJUNGAN'                 AS jenis_layanan,
-              pengunjung                  AS nama_pengguna,
-              wbp                         AS nama_wbp,
-              catatan                     AS no_hp,
-              'data_pengunjung'           AS sumber
-            FROM data_pengunjung.data_kunjungan
+            WHERE dl.status = 'dilayani'
 
             UNION ALL
 
@@ -58,6 +52,23 @@ class DashboardController extends Controller
             WHERE dt.deleted_date IS NULL
         ";
 
+        /* ========================================================================
+        KODE ASLI KUNJUNGAN (DIKOMENTARI SEMENTARA)
+        Jika database data_pengunjung sudah ada, masukkan kembali kode ini 
+        di atas UNION ALL SIPIRMAN pada variabel $sql di atas:
+        
+        UNION ALL
+        SELECT
+            waktu_kunjungan             AS tgl,
+            'KUNJUNGAN'                 AS jenis_layanan,
+            pengunjung                  AS nama_pengguna,
+            wbp                         AS nama_wbp,
+            catatan                     AS no_hp,
+            'data_pengunjung'           AS sumber
+        FROM data_pengunjung.data_kunjungan
+        ========================================================================
+        */
+
         $query = DB::table(DB::raw("($sql) as combined_data"));
 
         // Filter tanggal
@@ -68,7 +79,7 @@ class DashboardController extends Controller
             $query->whereDate('tgl', '<=', $request->end_date);
         }
 
-        // Total semua data
+        // Total semua data 
         $totalPengguna = (clone $query)->count();
 
         // Total yang punya no HP (bisa di-follow up)
@@ -98,12 +109,13 @@ class DashboardController extends Controller
         $endDate   = $request->filled('end_date')   ? $request->end_date   : now()->toDateString();
 
         return view('dashboard', compact(
+            'jumlahTahanan',
             'totalPengguna',
             'totalBisaFollowUp',
             'perLayanan',
             'chartData',
             'startDate',
-            'endDate',
+            'endDate'
         ));
     }
 }

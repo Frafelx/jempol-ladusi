@@ -12,6 +12,7 @@
 </head>
 <body class="bg-[#FAFAFA] text-gray-800 antialiased flex h-screen overflow-hidden selection:bg-indigo-100 selection:text-indigo-900" style="font-family: 'Inter', sans-serif;">
 
+    <!-- Audio Mixkit -->
     <audio id="notifSound" src="https://assets.mixkit.co/active_storage/sfx/2574/2574-preview.mp3" preload="auto"></audio>
 
     <aside class="w-[260px] bg-white border-r border-gray-100 flex flex-col z-20">
@@ -78,13 +79,15 @@
                     <span id="notifBadge" class="hidden absolute top-1.5 right-2 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
                 </button>
 
-                <div id="notifPopup" class="hidden absolute top-12 right-40 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 transform origin-top-right transition-all">
+                <!-- Box Pop-Up diperlebar menjadi w-96 agar teks panjang muat -->
+                <div id="notifPopup" class="hidden absolute top-12 right-40 w-96 bg-white rounded-xl shadow-lg border border-gray-100 z-50 transform origin-top-right transition-all">
                     <div class="px-4 py-3 border-b border-gray-100 flex justify-between items-center bg-gray-50/80 rounded-t-xl">
-                        <h4 class="text-[13px] font-bold text-gray-800">Notifikasi Hari Ini</h4>
+                        <h4 class="text-[13px] font-bold text-gray-800">Notifikasi Terbaru</h4>
                         <span id="notifCountText" class="text-[11px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">0 Baru</span>
                     </div>
                     <div id="notifList" class="max-h-72 overflow-y-auto divide-y divide-gray-50 p-2">
-                        </div>
+                        <!-- Konten list notifikasi -->
+                    </div>
                     <div class="p-2 border-t border-gray-100">
                         <a href="{{ route('data-pengguna') }}" class="block w-full text-center py-2 text-[12px] font-semibold text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
                             Lihat Semua Data Layanan
@@ -120,20 +123,25 @@
         </main>
     </div>
 
+    <!-- SCRIPT AJAX NOTIFIKASI -->
+    <!-- SCRIPT AJAX NOTIFIKASI SUPER (ANTI JEBAKAN TANGGAL LAMA) -->
     <script>
-        let currentLatestNotifKey = "";
+        let currentNotifFingerprint = "";
 
         function toggleNotifPopup() {
             const popup = document.getElementById('notifPopup');
             popup.classList.toggle('hidden');
             
+            // Sembunyikan titik merah saat dibuka
             document.getElementById('notifBadge').classList.add('hidden');
             
-            if (currentLatestNotifKey !== "") {
-                localStorage.setItem('last_read_notif', currentLatestNotifKey);
+            // Simpan "foto" memori notifikasi saat ini ke browser (tandanya sudah dibaca)
+            if (currentNotifFingerprint !== "") {
+                localStorage.setItem('last_read_notif_state', currentNotifFingerprint);
             }
         }
 
+        // Tutup pop-up jika klik di luar kotak
         document.addEventListener('click', function(event) {
             const popup = document.getElementById('notifPopup');
             const button = document.getElementById('notifButton');
@@ -151,23 +159,23 @@
                     const countText = document.getElementById('notifCountText');
 
                     if (data.count > 0) {
-                        currentLatestNotifKey = data.data[0].tgl + '_' + data.data[0].nama_pengguna;
-                        const lastReadNotif = localStorage.getItem('last_read_notif');
+                        // KUNCI SUPER: Gabungkan semua nama WBP yang ada di list jadi satu teks panjang
+                        currentNotifFingerprint = data.data.map(item => item.jenis_layanan + '_' + item.nama_pengguna).join('|');
+                        const lastReadState = localStorage.getItem('last_read_notif_state');
 
-                        // JIKA ada notifikasi baru DAN pop-up sedang tertutup
-                        if (currentLatestNotifKey !== lastReadNotif && document.getElementById('notifPopup').classList.contains('hidden')) {
-                            // Tampilkan Titik Merah
+                        // Jika "foto" barisannya beda dengan yang disimpan (berarti ada data lama yg baru berstatus dilayani nyelip)
+                        if (currentNotifFingerprint !== lastReadState && document.getElementById('notifPopup').classList.contains('hidden')) {
+                            
+                            // Munculkan titik merah
                             badge.classList.remove('hidden');
 
-                            // Mainkan Suara Notifikasi "Software Interface Start"
+                            // Bunyikan lonceng
                             const sound = document.getElementById('notifSound');
-                            sound.currentTime = 0; // Reset ke detik 0
-                            
-                            // Browser modern membutuhkan interaksi dari user (klik sembarang tempat) sebelum bisa memutar suara otomatis. 
+                            sound.currentTime = 0; 
                             sound.play().catch(e => console.log('Menunggu interaksi user sebelum memutar suara.'));
                         }
 
-                        countText.innerText = data.count + ' Baru Hari Ini';
+                        countText.innerText = data.count + ' Terbaru';
                         
                         listContainer.innerHTML = '';
                         data.data.forEach(item => {
@@ -178,22 +186,29 @@
                             if(item.jenis_layanan === 'KUNJUNGAN') iconColor = 'text-purple-500 bg-purple-50';
                             if(item.jenis_layanan === 'SIPIRMAN') iconColor = 'text-amber-500 bg-amber-50';
 
+                            // Render HTML Notifikasi Baru
                             listContainer.innerHTML += `
-                                <a href="${urlRedirect}" class="flex items-start gap-3 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                                    <div class="mt-1 p-1.5 rounded-full ${iconColor}">
+                                <a href="${urlRedirect}" class="flex items-start gap-3 p-3 hover:bg-indigo-50/50 rounded-lg transition-colors border-b border-gray-50 last:border-0">
+                                    <div class="mt-1 p-2 rounded-full ${iconColor} shrink-0 shadow-sm">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </div>
-                                    <div>
-                                        <p class="text-[12.5px] font-semibold text-gray-800 leading-tight">Input Baru: ${item.jenis_layanan}</p>
-                                        <p class="text-[11.5px] text-gray-500 mt-0.5 truncate w-48">Atas nama: ${item.nama_pengguna || 'Tidak diketahui'}</p>
+                                    <div class="flex-1">
+                                        <p class="text-[12px] font-bold text-gray-800 leading-snug mb-1">
+                                            ${item.pesan}
+                                        </p>
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider">
+                                                Atas Nama: ${item.nama_pengguna || 'Tidak diketahui'}
+                                            </span>
+                                        </div>
                                     </div>
                                 </a>
                             `;
                         });
                     } else {
                         badge.classList.add('hidden');
-                        countText.innerText = '0 Baru';
-                        listContainer.innerHTML = '<div class="p-4 text-center text-[12px] text-gray-400">Belum ada notifikasi layanan baru hari ini.</div>';
+                        countText.innerText = '0 Terbaru';
+                        listContainer.innerHTML = '<div class="p-4 text-center text-[12px] text-gray-400">Belum ada data yang selesai diproses.</div>';
                     }
                 })
                 .catch(error => console.error('Gagal mengambil notifikasi:', error));
@@ -204,5 +219,6 @@
             setInterval(fetchLatestNotifications, 15000);
         });
     </script>
+
 </body>
 </html>

@@ -8,6 +8,7 @@ use App\Http\Controllers\BukuTeleponController; // Gabungkan semua use di sini
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 
+// SALAH: Ini langsung memanggil view, jadi variabel dari controller tidak terbaca
 Route::get('/', function () {
     return view('dashboard');
 })->name('dashboard');
@@ -29,3 +30,6 @@ Route::delete('/buku-telepon/{id}', [BukuTeleponController::class, 'destroy'])->
 
 
 Route::get('/api/notifications', [NotificationController::class, 'getLatest'])->name('api.notifications');
+
+// BENAR: Ini memanggil method index di dalam DashboardController
+Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
