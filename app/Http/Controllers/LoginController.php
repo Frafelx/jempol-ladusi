@@ -36,10 +36,11 @@ class LoginController extends Controller
             // Simpan ke session agar ProfileController bisa baca
             session(['account' => $user->name]);
 
-            return redirect()->intended(route('dashboard'));
+           // Ganti jadi lurus langsung ke dashboard:
+return redirect()->route('dashboard');
         }
 
-        return back()
+    return back()
             ->withInput($request->only('email'))
             ->withErrors(['email' => 'Username atau password salah.']);
     }

@@ -97,18 +97,24 @@
 
                 <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
 
-                <div class="flex items-center gap-3 cursor-pointer group ml-1">
+                <!-- Link ke Halaman Profil -->
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 cursor-pointer group ml-1 px-2 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
                     <div class="text-right hidden sm:block">
-                        <p class="text-[13px] font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors leading-tight">Tegar Jaya</p>
+                        <!-- Nama Dinamis Mengikuti User yang Login -->
+                        <p class="text-[13px] font-semibold text-gray-900 group-hover:text-indigo-600 transition-colors leading-tight uppercase">
+                            {{ Auth::user()->name }}
+                        </p>
                         <p class="text-[11px] text-gray-500 font-medium leading-tight">Administrator</p>
                     </div>
-                    <div class="h-9 w-9 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm group-hover:bg-indigo-100 transition-colors">
-                        TJ
+                    <!-- Inisial Dinamis (Mengambil 2 huruf pertama dari nama) -->
+                    <div class="h-9 w-9 rounded-full bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-sm ring-2 ring-white shadow-sm group-hover:bg-indigo-100 transition-colors uppercase">
+                        {{ substr(Auth::user()->name, 0, 2) }}
                     </div>
-                </div>
+                </a>
 
-                <form action="#" method="POST" class="ml-2">
-                    <button type="button" class="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group">
+<form action="{{ route('logout') }}" method="POST" class="ml-2">
+                    @csrf
+                    <button type="submit" class="flex items-center gap-2 px-3 py-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 group">
                         <svg class="w-5 h-5 transform group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path></svg>
                         <span class="text-[13px] font-medium hidden lg:block">Keluar</span>
                     </button>

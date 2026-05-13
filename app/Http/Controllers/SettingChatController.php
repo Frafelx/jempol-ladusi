@@ -9,10 +9,23 @@ class SettingChatController extends Controller
 {
     private $filePath = 'chat_templates.json';
 
+    // Daftar kepanjangan layanan ditambahkan sebagai property
+    private $kepanjanganList = [
+        'SIPIRMAN'       => '(Sistem Manajemen Pengiriman Titipan Barang dan Makanan)',
+        'KAGATAU'        => '(Kabarin Keluarga Tahanan Baru)',
+        'SIAP INTEGRASI' => '(Sistem Informasi Pelayanan Integrasi)',
+        'KUNJUNGAN'      => '(Layanan Kunjungan)'
+    ];
+
     public function index()
     {
         $templates = $this->getTemplates();
-        return view('setting-chat', compact('templates'));
+        
+        // Ambil data kepanjangan list untuk dikirim ke View
+        $kepanjanganList = $this->kepanjanganList;
+
+        // Kirim $templates dan $kepanjanganList ke halaman setting-chat
+        return view('setting-chat', compact('templates', 'kepanjanganList'));
     }
 
     public function update(Request $request)

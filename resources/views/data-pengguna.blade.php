@@ -8,9 +8,6 @@
             <h3 class="text-[18px] font-bold text-gray-900 tracking-tight">Rekapitulasi Terpadu</h3>
             <p class="text-[13px] text-gray-500 mt-1">Data gabungan dari SIAP INTEGRASI, KAGATAU, Kunjungan, dan SIPIRMAN.</p>
         </div>
-        <button onclick="resetFollowUpMemory()" id="btnResetMemory" class="hidden text-[11px] font-semibold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1.5 rounded-lg transition-colors">
-            Reset Status Follow Up
-        </button>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-6">
@@ -25,7 +22,7 @@
                 </div>
             </div>
 
-            <div class="w-full md:w-56">
+            <div class="w-full md:w-48">
                 <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Jenis Layanan</label>
                 <div class="relative group">
                     <select name="layanan" class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all appearance-none cursor-pointer font-medium text-gray-700">
@@ -41,23 +38,38 @@
                 </div>
             </div>
 
+            <!-- Filter Status Follow Up -->
+            <div class="w-full md:w-44">
+                <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Status WA</label>
+                <div class="relative group">
+                    <select name="status_followup" id="filterFollowUp" onchange="applyFollowUpFilter()" class="w-full pl-4 pr-10 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all appearance-none cursor-pointer font-medium text-gray-700">
+                        <option value="semua" {{ request('status_followup') == 'semua' ? 'selected' : '' }}>Semua Status</option>
+                        <option value="belum" {{ request('status_followup') == 'belum' ? 'selected' : '' }}>Belum Terkirim</option>
+                        <option value="sudah" {{ request('status_followup') == 'sudah' ? 'selected' : '' }}>Sudah Terkirim</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 flex items-center px-3.5 pointer-events-none text-gray-400 group-focus-within:text-indigo-500 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
+
             <div class="w-full md:w-auto flex gap-3">
-                <div>
+                <div class="w-full md:w-32">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Mulai Tgl</label>
                     <input type="date" name="start_date" value="{{ request('start_date') }}" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all text-gray-700 font-medium">
                 </div>
-                <div>
+                <div class="w-full md:w-32">
                     <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Sampai Tgl</label>
                     <input type="date" name="end_date" value="{{ request('end_date') }}" class="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 focus:bg-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 rounded-xl text-[13px] outline-none transition-all text-gray-700 font-medium">
                 </div>
             </div>
 
             <div class="flex gap-2 w-full md:w-auto">
-                <button type="submit" class="flex-1 md:flex-none px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
+                <button type="submit" class="flex-1 md:flex-none px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-[13px] font-semibold rounded-xl shadow-md shadow-indigo-600/20 transition-all flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
                     Filter
                 </button>
-                <a href="{{ route('data-pengguna') }}" class="px-5 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-600 text-[13px] font-semibold rounded-xl transition-all flex items-center justify-center">
+                <a href="{{ route('data-pengguna') }}" class="px-4 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 text-gray-600 text-[13px] font-semibold rounded-xl transition-all flex items-center justify-center">
                     Reset
                 </a>
             </div>
@@ -78,9 +90,10 @@
                         <th class="px-6 py-4 text-center">Follow Up</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100 text-[13.5px] bg-white">
+                <tbody id="dataTableBody" class="divide-y divide-gray-100 text-[13.5px] bg-white">
                     @forelse ($dataPengguna as $index => $data)
-                        <tr class="hover:bg-indigo-50/40 even:bg-slate-50/50 transition-colors group">
+                        <!-- Atribut data-terkirim diambil dari Database -->
+                        <tr class="hover:bg-indigo-50/40 even:bg-slate-50/50 transition-colors group" data-terkirim="{{ $data->is_terkirim ?? 0 }}">
                             <td class="px-6 py-4 text-center text-gray-400 font-medium">
                                 {{ $dataPengguna->firstItem() + $index }}
                             </td>
@@ -127,12 +140,11 @@
 
                                         $namaP = $data->nama_pengguna ?? 'Bapak/Ibu';
                                         $namaW = $data->nama_wbp ?? '-';
-                                        $layanan = $data->jenis_layanan ?? '-';
                                         
-                                        // Ambil SATU template universal
+                                        $layanan = $data->layanan_full ?? $data->jenis_layanan ?? '-';
+                                        
                                         $templateLayanan = $chatTemplates['template_umum'] ?? "Halo *{nama_pengguna}*, info terkait layanan *{layanan}* untuk WBP *{nama_wbp}*.";
                                         
-                                        // Replace 3 parameter
                                         $pesanTeks = str_replace(
                                             ['{nama_pengguna}', '{nama_wbp}', '{layanan}'], 
                                             [$namaP, $namaW, $layanan], 
@@ -142,11 +154,21 @@
                                         $waUrl = "https://wa.me/{$phoneClean}?text=" . urlencode($pesanTeks);
                                     @endphp
                                     
-                                    <a href="{{ $waUrl }}" target="_blank" onclick="markAsFollowedUp(this, '{{ md5($waUrl) }}')" data-id="{{ md5($waUrl) }}"
-                                       class="btn-follow-up inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-200 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold transition-all shadow-sm">
-                                        <svg class="w-3.5 h-3.5 wa-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
-                                        <span class="btn-text">Chat WA</span>
-                                    </a>
+                                    @if(!empty($data->is_terkirim) && $data->is_terkirim)
+                                        <!-- TAMPILAN JIKA SUDAH TERKIRIM (DARI DATABASE) -->
+                                        <a href="{{ $waUrl }}" target="_blank"
+                                           class="btn-follow-up inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 text-emerald-600 hover:text-white border border-emerald-200 hover:border-emerald-500 rounded-lg text-[11px] font-bold transition-all shadow-sm">
+                                            <svg class="w-3.5 h-3.5 wa-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
+                                            <span class="btn-text">Terkirim</span>
+                                        </a>
+                                    @else
+                                        <!-- TAMPILAN JIKA BELUM TERKIRIM (SIAP AJAX KE DATABASE) -->
+                                        <a href="{{ $waUrl }}" target="_blank" onclick="markAsFollowedUp(event, this, '{{ $data->hash_id }}')"
+                                           class="btn-follow-up inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 hover:bg-gray-200 text-gray-600 border border-gray-200 rounded-lg text-[11px] font-bold transition-all shadow-sm">
+                                            <svg class="w-3.5 h-3.5 wa-icon" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
+                                            <span class="btn-text">Chat WA</span>
+                                        </a>
+                                    @endif
                                 @else
                                     <button disabled class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-400 border border-gray-200 rounded-lg text-[11px] font-bold cursor-not-allowed">
                                         <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.277.042-.615.088-2.052-.505-1.745-.718-2.868-2.493-2.953-2.606-.085-.113-.705-.941-.705-1.796 0-.855.441-1.275.597-1.44.156-.165.342-.206.455-.206.114 0 .228 0 .326.005.099.005.234-.038.356.257.128.309.44 1.077.483 1.161.043.085.071.185.014.299-.057.113-.085.185-.171.284-.085.099-.185.228-.256.313-.085.099-.185.213-.071.412.114.199.511.849 1.096 1.373.758.679 1.401.895 1.6 1.009.199.114.313.099.427-.028.114-.128.483-.57.612-.765.128-.199.256-.165.44-.095.185.071 1.18.556 1.38 1.656z"></path><path d="M12 2C6.477 2 2 6.477 2 12c0 1.764.462 3.42 1.258 4.869L2 22l5.297-1.186C8.705 21.547 10.316 22 12 22c5.523 0 10-4.477 10-10S17.523 2 12 2zm0 18.232c-1.523 0-3.003-.393-4.321-1.139l-.31-.176-3.149.704.717-3.084-.193-.321A8.204 8.204 0 013.768 12C3.768 7.458 7.458 3.768 12 3.768 16.542 3.768 20.232 7.458 20.232 12c0 4.542-3.69 8.232-8.232 8.232z"></path></svg>
@@ -187,26 +209,66 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            let hasFollowedUp = false;
-            const buttons = document.querySelectorAll('.btn-follow-up');
-            
-            buttons.forEach(btn => {
-                const id = btn.getAttribute('data-id');
-                if (localStorage.getItem('followed_up_' + id)) {
-                    setButtonToEmerald(btn);
-                    hasFollowedUp = true;
-                }
-            });
-
-            if(hasFollowedUp) {
-                document.getElementById('btnResetMemory').classList.remove('hidden');
-            }
+            // Jalankan filter seketika halaman selesai dimuat
+            applyFollowUpFilter();
         });
 
-        function markAsFollowedUp(btn, id) {
-            localStorage.setItem('followed_up_' + id, 'true');
-            setButtonToEmerald(btn);
-            document.getElementById('btnResetMemory').classList.remove('hidden');
+        // FUNGSI: Menyembunyikan/menampilkan baris tabel sesuai pilihan Filter Status WA
+        function applyFollowUpFilter() {
+            const filterValue = document.getElementById('filterFollowUp').value;
+            const rows = document.querySelectorAll('#dataTableBody tr');
+
+            rows.forEach(row => {
+                // Jangan sembunyikan baris "Data tidak ditemukan" jika tabel kosong
+                if(row.querySelector('td[colspan="7"]')) return;
+
+                // Cek status dari atribut data-terkirim yang disiapkan Database
+                const isFollowedUp = row.getAttribute('data-terkirim') === '1';
+
+                // Logika Filter
+                if (filterValue === 'semua') {
+                    row.style.display = '';
+                } else if (filterValue === 'sudah' && isFollowedUp) {
+                    row.style.display = '';
+                } else if (filterValue === 'sudah' && !isFollowedUp) {
+                    row.style.display = 'none';
+                } else if (filterValue === 'belum' && !isFollowedUp) {
+                    row.style.display = '';
+                } else if (filterValue === 'belum' && isFollowedUp) {
+                    row.style.display = 'none';
+                }
+            });
+        }
+
+        // FUNGSI: Menyimpan ke database secara diam-diam (AJAX) saat tombol Chat WA diklik
+        function markAsFollowedUp(event, btn, hashId) {
+            
+            // Ambil token CSRF Laravel yang wajib ada di setiap POST request
+            const csrfTokenMeta = document.querySelector('meta[name="csrf-token"]');
+            const token = csrfTokenMeta ? csrfTokenMeta.content : '';
+
+            fetch('{{ route('mark-follow-up') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': token
+                },
+                body: JSON.stringify({ hash_id: hashId })
+            }).then(response => {
+                if(response.ok) {
+                    // Jika sukses tersimpan di database, ubah warna tombol jadi Hijau
+                    setButtonToEmerald(btn);
+                    
+                    // Tandai baris tabel tersebut sudah terkirim ('1')
+                    btn.closest('tr').setAttribute('data-terkirim', '1');
+                    
+                    // Hapus fungsi onclick biar tidak nge-POST dua kali jika diklik lagi
+                    btn.removeAttribute('onclick');
+                    
+                    // Segarkan filter (Jika sedang dalam mode "Belum Terkirim", data langsung hilang!)
+                    applyFollowUpFilter();
+                }
+            }).catch(error => console.error("Gagal menyimpan log WA:", error));
         }
 
         function setButtonToEmerald(btn) {
@@ -215,17 +277,6 @@
             
             const textSpan = btn.querySelector('.btn-text');
             if(textSpan) textSpan.innerText = 'Terkirim';
-        }
-
-        function resetFollowUpMemory() {
-            if(confirm('Yakin ingin mereset semua status Follow Up di halaman ini kembali menjadi abu-abu?')) {
-                Object.keys(localStorage).forEach(function(key) {
-                    if (key.startsWith('followed_up_')) {
-                        localStorage.removeItem(key);
-                    }
-                });
-                window.location.reload();
-            }
         }
     </script>
 @endsection

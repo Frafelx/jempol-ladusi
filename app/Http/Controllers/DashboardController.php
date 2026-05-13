@@ -41,6 +41,17 @@ class DashboardController extends Controller
             UNION ALL
 
             SELECT
+              waktu_kunjungan             AS tgl,
+              'KUNJUNGAN'                 AS jenis_layanan,
+              pengunjung                  AS nama_pengguna,
+              wbp                         AS nama_wbp,
+              catatan                     AS no_hp,
+              'data_pengunjung'           AS sumber
+            FROM data_kunjungan.data_kunjungan
+
+            UNION ALL
+
+            SELECT
               DATE(dt.tanggal)            AS tgl,
               'SIPIRMAN'                  AS jenis_layanan,
               dt.nama_pengirim            AS nama_pengguna,
@@ -52,53 +63,50 @@ class DashboardController extends Controller
             WHERE dt.deleted_date IS NULL
         ";
 
-        /* ========================================================================
-        KODE ASLI KUNJUNGAN (DIKOMENTARI SEMENTARA)
-        Jika database data_pengunjung sudah ada, masukkan kembali kode ini 
-        di atas UNION ALL SIPIRMAN pada variabel $sql di atas:
-        
-        UNION ALL
-        SELECT
-            waktu_kunjungan             AS tgl,
-            'KUNJUNGAN'                 AS jenis_layanan,
-            pengunjung                  AS nama_pengguna,
-            wbp                         AS nama_wbp,
-            catatan                     AS no_hp,
-            'data_pengunjung'           AS sumber
-        FROM data_pengunjung.data_kunjungan
-        ========================================================================
-        */
+        // 1. Bungkus query dengan pembuatan Hash ID Unik (Sama seperti di DataPenggunaController)
+        $outerSql = "SELECT *, MD5(CONCAT(jenis_layanan, '_', tgl, '_', IFNULL(nama_pengguna, ''))) AS hash_id FROM ($sql) as base_data";
 
-        $query = DB::table(DB::raw("($sql) as combined_data"));
+        // 2. Join dengan tabel follow_up_logs agar bisa menghitung status WA
+        $query = DB::table(DB::raw("($outerSql) as combined_data"))
+                   ->leftJoin('follow_up_logs', 'combined_data.hash_id', '=', 'follow_up_logs.hash_id')
+                   ->select('combined_data.*', DB::raw('IF(follow_up_logs.hash_id IS NOT NULL, 1, 0) as is_terkirim'));
 
         // Filter tanggal
         if ($request->filled('start_date')) {
-            $query->whereDate('tgl', '>=', $request->start_date);
+            $query->whereDate('combined_data.tgl', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
-            $query->whereDate('tgl', '<=', $request->end_date);
+            $query->whereDate('combined_data.tgl', '<=', $request->end_date);
         }
 
-        // Total semua data 
+        // Total semua data pengguna layanan
         $totalPengguna = (clone $query)->count();
 
-        // Total yang punya no HP (bisa di-follow up)
-        $totalBisaFollowUp = (clone $query)
-            ->whereNotNull('no_hp')
-            ->where('no_hp', '!=', '')
+        // Total yang punya no HP (Target Follow Up)
+        $totalTargetFollowUp = (clone $query)
+            ->whereNotNull('combined_data.no_hp')
+            ->where('combined_data.no_hp', '!=', '')
             ->count();
+
+        // Total yang SUDAH di Follow Up (Berdasarkan data dari database)
+        $totalSudahFollowUp = (clone $query)
+            ->whereRaw('follow_up_logs.hash_id IS NOT NULL')
+            ->count();
+            
+        // Menghindari error angka minus jika ada anomali
+        $totalBelumFollowUp = max(0, $totalTargetFollowUp - $totalSudahFollowUp);
 
         // Total per layanan
         $perLayanan = (clone $query)
-            ->select('jenis_layanan', DB::raw('COUNT(*) as jumlah'))
-            ->groupBy('jenis_layanan')
+            ->select('combined_data.jenis_layanan', DB::raw('COUNT(*) as jumlah'))
+            ->groupBy('combined_data.jenis_layanan')
             ->get()
             ->keyBy('jenis_layanan');
 
         // Data tren per hari untuk chart
         $chartData = (clone $query)
-            ->select(DB::raw('DATE(tgl) as tanggal'), DB::raw('COUNT(*) as jumlah'))
-            ->groupBy(DB::raw('DATE(tgl)'))
+            ->select(DB::raw('DATE(combined_data.tgl) as tanggal'), DB::raw('COUNT(*) as jumlah'))
+            ->groupBy(DB::raw('DATE(combined_data.tgl)'))
             ->orderBy('tanggal')
             ->get()
             ->mapWithKeys(fn($r) => [
@@ -111,7 +119,9 @@ class DashboardController extends Controller
         return view('dashboard', compact(
             'jumlahTahanan',
             'totalPengguna',
-            'totalBisaFollowUp',
+            'totalTargetFollowUp', // Variabel baru
+            'totalSudahFollowUp',  // Variabel baru
+            'totalBelumFollowUp',  // Variabel baru
             'perLayanan',
             'chartData',
             'startDate',

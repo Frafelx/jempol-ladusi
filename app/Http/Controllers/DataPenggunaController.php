@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use App\Models\FollowUpLog; // <--- Tambahan baru
 
 class DataPenggunaController extends Controller
 {
@@ -12,7 +13,6 @@ class DataPenggunaController extends Controller
     {
         // 1. Siapkan raw query
         $sql = "
-            -- 1. siapintegrasi (HANYA JIKA histori_info_sidang_tpp SUDAH TERISI)
             SELECT
               tanggal_daftar              AS tgl,
               'SIAP INTEGRASI'            AS jenis_layanan,
@@ -25,7 +25,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 2. kagatau (HANYA JIKA status = 'dilayani')
             SELECT
               dl.tanggal_masuk            AS tgl,
               'KAGATAU'                   AS jenis_layanan,
@@ -40,7 +39,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 3. data_pengunjung
             SELECT
               waktu_kunjungan             AS tgl,
               'KUNJUNGAN'                 AS jenis_layanan,
@@ -52,7 +50,6 @@ class DataPenggunaController extends Controller
 
             UNION ALL
 
-            -- 4. sipirman
             SELECT
               DATE(dt.tanggal)            AS tgl,
               'SIPIRMAN'                  AS jenis_layanan,
@@ -65,44 +62,68 @@ class DataPenggunaController extends Controller
             WHERE dt.deleted_date IS NULL
         ";
 
-        // 2. Bungkus raw query menjadi Subquery
-        $query = DB::table(DB::raw("($sql) as combined_data"));
+        // 2. Bungkus query dengan pembuatan Hash ID Unik
+        $outerSql = "SELECT *, MD5(CONCAT(jenis_layanan, '_', tgl, '_', IFNULL(nama_pengguna, ''))) AS hash_id FROM ($sql) as base_data";
 
-        // 3. Aplikasikan Filter: Search
+        // 3. Join dengan tabel follow_up_logs
+        $query = DB::table(DB::raw("($outerSql) as combined_data"))
+                   ->leftJoin('follow_up_logs', 'combined_data.hash_id', '=', 'follow_up_logs.hash_id')
+                   ->select('combined_data.*', DB::raw('IF(follow_up_logs.hash_id IS NOT NULL, 1, 0) as is_terkirim'));
+
+        // 4. Aplikasikan Filter
         if ($request->filled('search')) {
             $search = '%' . $request->search . '%';
             $query->where(function($q) use ($search) {
-                $q->where('nama_pengguna', 'like', $search)
-                  ->orWhere('nama_wbp', 'like', $search)
-                  ->orWhere('no_hp', 'like', $search);
+                $q->where('combined_data.nama_pengguna', 'like', $search)
+                  ->orWhere('combined_data.nama_wbp', 'like', $search)
+                  ->orWhere('combined_data.no_hp', 'like', $search);
             });
         }
-
-        // 4. Aplikasikan Filter: Jenis Layanan
         if ($request->filled('layanan') && $request->layanan !== 'semua') {
-            $query->where('jenis_layanan', $request->layanan);
+            $query->where('combined_data.jenis_layanan', $request->layanan);
         }
-
-        // 5. Aplikasikan Filter: Rentang Tanggal
         if ($request->filled('start_date')) {
-            $query->whereDate('tgl', '>=', $request->start_date);
+            $query->whereDate('combined_data.tgl', '>=', $request->start_date);
         }
         if ($request->filled('end_date')) {
-            $query->whereDate('tgl', '<=', $request->end_date);
+            $query->whereDate('combined_data.tgl', '<=', $request->end_date);
         }
 
-        // 6. Pagination & Sorting
-        $dataPengguna = $query->orderBy('tgl', 'desc')
+        // 5. Pagination & Sorting
+        $dataPengguna = $query->orderBy('combined_data.tgl', 'desc')
                               ->paginate(20)
                               ->withQueryString();
 
-        // 7. Ambil Template JSON (Jika file belum ada, kembalikan array kosong)
+        // 6. Kepanjangan Layanan
+        $kepanjanganList = [
+            'SIPIRMAN'       => '(Sistem Manajemen Pengiriman Titipan Barang dan Makanan)',
+            'KAGATAU'        => '(Kabarin Keluarga Tahanan Baru)',
+            'SIAP INTEGRASI' => '(Sistem Informasi Pelayanan Integrasi)',
+            'KUNJUNGAN'      => '(Layanan Kunjungan)'
+        ];
+
+        $dataPengguna->getCollection()->transform(function ($item) use ($kepanjanganList) {
+            $item->layanan_full = $item->jenis_layanan; 
+            if (isset($kepanjanganList[$item->jenis_layanan])) {
+                $item->layanan_full = $item->jenis_layanan . ' ' . $kepanjanganList[$item->jenis_layanan];
+            }
+            return $item;
+        });
+
+        // 7. Ambil Template
         $chatTemplates = [];
         if (Storage::disk('local')->exists('chat_templates.json')) {
             $chatTemplates = json_decode(Storage::disk('local')->get('chat_templates.json'), true);
         }
 
-        // 8. Lempar data dan template ke view
         return view('data-pengguna', compact('dataPengguna', 'chatTemplates'));
+    }
+
+    // FUNGSI BARU: Menyimpan status WA ke database via AJAX
+    public function markFollowUp(Request $request)
+    {
+        $request->validate(['hash_id' => 'required|string']);
+        FollowUpLog::firstOrCreate(['hash_id' => $request->hash_id]);
+        return response()->json(['success' => true]);
     }
 }
